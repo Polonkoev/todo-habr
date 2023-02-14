@@ -9,28 +9,28 @@ import (
 	"strconv"
 )
 
-type Book struct {
-	ID     string  `json:"id"`
-	Title  string  `json:"title"`
-	Author *Author `json:"author"`
+type Task struct { //Book
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	// Description *Description `json:"description"`
+	Description string `json:"description"`
 }
 
-type Author struct {
-	Firstname string `json:"firstname"`
-	Lastname  string `json:"lastname"`
-}
+// type Description struct {
+// 	Description string `json:"description"`
+// }
 
-var books []Book
+var tasks []Task
 
-func getBooks(w http.ResponseWriter, r *http.Request) {
+func getTasks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(books)
+	json.NewEncoder(w).Encode(tasks)
 }
 
-func getBook(w http.ResponseWriter, r *http.Request) {
+func getTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	for _, item := range books {
+	for _, item := range tasks {
 
 		if item.ID == params["id"] {
 
@@ -38,53 +38,55 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(&Book{})
+	json.NewEncoder(w).Encode(&Task{})
 }
-func createBook(w http.ResponseWriter, r *http.Request) {
+func createTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var book Book
-	_ = json.NewDecoder(r.Body).Decode(&book)
-	book.ID = strconv.Itoa(rand.Intn(1000000))
-	books = append(books, book)
-	json.NewEncoder(w).Encode(book)
+	var task Task
+	_ = json.NewDecoder(r.Body).Decode(&task)
+	task.ID = strconv.Itoa(rand.Intn(1000000))
+	tasks = append(tasks, task)
+	json.NewEncoder(w).Encode(task)
 }
 
-func updateBook(w http.ResponseWriter, r *http.Request) {
+func updateTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	for index, item := range books {
+	for index, item := range tasks {
 		if item.ID == params["id"] {
-			books = append(books[:index], books[index+1:]...)
-			var book Book
-			_ = json.NewDecoder(r.Body).Decode(&book)
-			book.ID = params["id"]
-			books = append(books, book)
-			json.NewEncoder(w).Encode(book)
+			tasks = append(tasks[:index], tasks[index+1:]...)
+			var task Task
+			_ = json.NewDecoder(r.Body).Decode(&task)
+			task.ID = params["id"]
+			tasks = append(tasks, task)
+			json.NewEncoder(w).Encode(task)
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(books)
+	json.NewEncoder(w).Encode(tasks)
 }
-func deleteBook(w http.ResponseWriter, r *http.Request) {
+func deleteTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	for index, item := range books {
+	for index, item := range tasks {
 		if item.ID == params["id"] {
-			books = append(books[:index], books[index+1:]...)
+			tasks = append(tasks[:index], tasks[index+1:]...)
 			break
 		}
 	}
-	json.NewEncoder(w).Encode(books)
+	json.NewEncoder(w).Encode(tasks)
 }
 
 func main() {
 	r := mux.NewRouter()
-	books = append(books, Book{ID: "1", Title: "Война и мир", Author: &Author{Firstname: "Лев", Lastname: "Толстой"}})
-	books = append(books, Book{ID: "2", Title: "Преступление и наказание", Author: &Author{Firstname: "Федор", Lastname: "Достоевский"}})
-	r.HandleFunc("/books", getBooks).Methods("GET")
-	r.HandleFunc("/books/{id}", getBook).Methods("GET")
-	r.HandleFunc("/books", createBook).Methods("POST")
-	r.HandleFunc("/books/{id}", updateBook).Methods("PUT")
-	r.HandleFunc("/books/{id}", deleteBook).Methods("DELETE")
-	log.Fatal(http.ListenAndServe(":8000", r))
+	tasks = append(tasks, Task{ID: "1", Title: "Лев", Description: "Выгулять льва, налить воды крокодилам"})
+	tasks = append(tasks, Task{ID: "2", Title: "Слон", Description: "Помыть черепах, почесать слону за ушами"})
+
+	r.HandleFunc("/", getTasks).Methods("GET")
+	r.HandleFunc("/tasks", getTasks).Methods("GET")
+	r.HandleFunc("/tasks/{id}", getTasks).Methods("GET")
+	r.HandleFunc("/tasks", createTask).Methods("POST")
+	r.HandleFunc("/tasks/{id}", updateTask).Methods("PUT")
+	r.HandleFunc("/tasks/{id}", deleteTask).Methods("DELETE")
+	log.Fatal(http.ListenAndServe("localhost:8000", r))
 }
