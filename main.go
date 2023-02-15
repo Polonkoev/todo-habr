@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type Task struct {
@@ -41,13 +43,25 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&Task{})
 }
 func createTask(w http.ResponseWriter, r *http.Request) {
+
 	w.Header().Set("Content-Type", "application/json")
 	var task Task
-	_ = json.NewDecoder(r.Body).Decode(&task)
+	err := json.NewDecoder(r.Body).Decode(&task)
+	if err != nil {
+		// todo: send error response with appripriate http status code
+		panic(err)
+	}
+
+	// todo: validation
+	// name, descriptions check for empty
+
 	task.ID = strconv.Itoa(rand.Intn(1000000))
 	tasks = append(tasks, task)
+	// todo: http status code add
 	json.NewEncoder(w).Encode(task)
 }
+
+//
 
 func updateTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -81,12 +95,14 @@ func main() {
 	r := mux.NewRouter()
 	tasks = append(tasks, Task{ID: "1", Title: "Лев", Description: "Выгулять льва, налить воды крокодилам"})
 	tasks = append(tasks, Task{ID: "2", Title: "Слон", Description: "Помыть черепах, почесать слону за ушами"})
-
+	//TODO:PATCH добавить
 	// r.HandleFunc("/", getTasks).Methods("GET")
 	r.HandleFunc("/tasks", getTasks).Methods("GET")
 	r.HandleFunc("/task/{id}", getTask).Methods("GET")
 	r.HandleFunc("/task", createTask).Methods("POST")
 	r.HandleFunc("/task/{id}", updateTask).Methods("PUT")
+
 	r.HandleFunc("/task/{id}", deleteTask).Methods("DELETE")
 	log.Fatal(http.ListenAndServe("localhost:8000", r))
+	fmt.Println("Server run")
 }
