@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-type Task struct { //Book
+type Task struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
 	// Description *Description `json:"description"`
@@ -82,11 +82,11 @@ func main() {
 	tasks = append(tasks, Task{ID: "1", Title: "Лев", Description: "Выгулять льва, налить воды крокодилам"})
 	tasks = append(tasks, Task{ID: "2", Title: "Слон", Description: "Помыть черепах, почесать слону за ушами"})
 
-	r.HandleFunc("/", getTasks).Methods("GET")
+	// r.HandleFunc("/", getTasks).Methods("GET")
 	r.HandleFunc("/tasks", getTasks).Methods("GET")
-	r.HandleFunc("/tasks/{id}", getTasks).Methods("GET")
-	r.HandleFunc("/tasks", createTask).Methods("POST")
-	r.HandleFunc("/tasks/{id}", updateTask).Methods("PUT")
-	r.HandleFunc("/tasks/{id}", deleteTask).Methods("DELETE")
+	r.HandleFunc("/task/{id}", getTask).Methods("GET")
+	r.HandleFunc("/task", createTask).Methods("POST")
+	r.HandleFunc("/task/{id}", updateTask).Methods("PUT")
+	r.HandleFunc("/task/{id}", deleteTask).Methods("DELETE")
 	log.Fatal(http.ListenAndServe("localhost:8000", r))
 }
