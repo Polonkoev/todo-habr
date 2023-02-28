@@ -16,12 +16,13 @@ type Task struct {
 	Title string `json:"title,omitempty"`
 
 	Description string `json:"description,omitempty"`
-	Status      string `json:"status,omitempty"`
+	Status      bool   `json:"status"`
 }
 
 var tasks []Task
 
 type getAllTasks struct {
+	Task    *Task  `json:"task,omitempty"`
 	Message string `json:"message,omitempty"`
 	Error   string `json:"error,omitempty"`
 }
@@ -37,6 +38,7 @@ func getTasks(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
+
 	json.NewEncoder(w).Encode(tasks)
 }
 
@@ -100,6 +102,7 @@ func createTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var response createTaskResponse
 	body, err := ioutil.ReadAll(r.Body)
+
 	if err != nil {
 		response.Error = err.Error()
 		response.Message = "Ошибка сервера!"
@@ -111,14 +114,17 @@ func createTask(w http.ResponseWriter, r *http.Request) {
 	// Декодируем данные JSON в структуру Task
 	var task Task
 	err = json.Unmarshal(body, &task)
+
 	if err != nil {
+
 		response.Error = err.Error()
 		response.Message = "Неверный формат данных JSON!"
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(response)
 		return
 	}
-	if task.Title == "" || task.Description == "" || task.Status == "" {
+
+	if task.Title == "" || task.Description == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		response.Error = fmt.Sprintf("Bad request")
 		response.Message = fmt.Sprintf("Заполните или добавьте обязательные поля")
@@ -129,9 +135,9 @@ func createTask(w http.ResponseWriter, r *http.Request) {
 	task.ID = int64(rand.Intn(1000000)) //todo: Найти нормальный пакет для id
 	tasks = append(tasks, task)
 	json.NewEncoder(w).Encode(task)
+	response.Message = fmt.Sprintf("Задача с названием %v успешно создана", task.Title)
+	json.NewEncoder(w).Encode(response)
 
-	//todo: validation
-	// name, descriptions check for empty
 }
 
 type updateTaskResponse struct {
@@ -169,13 +175,13 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 	taskId, err := strconv.ParseInt(taskIdParam, 10, 64)
 	if err != nil {
 
-		w.WriteHeader(http.StatusBadRequest) // Не уверен что верная ошибка!
+		w.WriteHeader(http.StatusBadRequest)
 		response.Error = fmt.Sprintf("Неверный ID!")
 		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	if task.Title == "" || task.Description == "" || task.Status == "" {
+	if task.Title == "" || task.Description == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		response.Error = fmt.Sprintf("Bad request")
 		response.Message = fmt.Sprintf("Заполните или добавьте обязательные поля")
@@ -183,7 +189,7 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itemById := searchTask(taskId) // находим задачу по id
+	itemById := searchTask(taskId) // находим задачу по
 	if itemById.ID == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		response.Error = fmt.Sprint("Task not found!")
@@ -191,13 +197,22 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if itemById.Status == false && task.Status == false {
+		task.Status = false
+	}
+	task.Status = true
+
 	for index, item := range tasks {
 		if item.ID == taskId {
+
 			task.ID = item.ID
+
 			tasks[index] = task
 			break
 		}
 	}
+
+	fmt.Println("TASK from client", task)
 
 	response.Task = &task
 	response.Message = fmt.Sprintf("Задача %v успешно изменена!", task.Title)
@@ -249,10 +264,9 @@ func deleteTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
 	r := mux.NewRouter()
-	tasks = append(tasks, Task{ID: 1, Title: "Лев", Description: "Выгулять льва, налить воды крокодилам", Status: "false"})
-	tasks = append(tasks, Task{ID: 2, Title: "Слон", Description: "Помыть черепах, почесать слону за ушами", Status: "false"})
+	tasks = append(tasks, Task{ID: 1, Title: "Лев", Description: "Выгулять льва, налить воды крокодилам", Status: false})
+	tasks = append(tasks, Task{ID: 2, Title: "Слон", Description: "Помыть черепах, почесать слону за ушами", Status: false})
 
 	r.HandleFunc("/tasks", getTasks).Methods("GET")
 	r.HandleFunc("/task/{id}", getTask).Methods("GET")
@@ -262,5 +276,4 @@ func main() {
 	r.HandleFunc("/task/{id}", deleteTask).Methods("DELETE")
 	fmt.Println("Server run")
 	log.Fatal(http.ListenAndServe("localhost:3000", r))
-
 }
